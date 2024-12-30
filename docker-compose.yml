@@ -1,0 +1,33 @@
+version: '3'
+volumes:
+  psql-data:
+
+services:
+  postgres_vector:
+    hostname: postgres
+    image: ankane/pgvector
+    restart: always
+    env_file:
+      - ./env
+    ports:
+      - 6024:5432
+    networks:
+      app-env:
+      interface:
+
+
+  postgres_pgadmin:
+    image: fenglc/pgadmin4
+    container_name: postgres_pgadmin
+    env_file:
+      - ./env
+    depends_on:
+      - postgres_vector
+    ports:
+      - 5050:5050
+    networks:
+      interface:
+
+networks:
+  app-env:
+  interface:

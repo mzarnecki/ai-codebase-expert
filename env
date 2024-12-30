@@ -1,0 +1,5 @@
+POSTGRES_USER=project_solver
+POSTGRES_PASSWORD=project_solver
+POSTGRES_DB=project_solver
+DEFAULT_USER=project_solver
+DEFAULT_PASSWORD=project_solver
