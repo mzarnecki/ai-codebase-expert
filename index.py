@@ -1,16 +1,15 @@
 import os
 from lib import utils
+from lib.db.VectorStore import VectorStore
+from lib.model.Ticket import Ticket
 from lib.streaming import StreamHandler
 import streamlit as st
 
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from langchain_community.vectorstores import DocArrayInMemorySearch
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_core.prompts import SystemMessagePromptTemplate, ChatPromptTemplate
 
-from io import StringIO
 
 st.set_page_config(page_title="AI PROJECT TICKET SOLVER", page_icon="📄")
 st.header('AI PROJECT TICKET SOLVER')
@@ -24,28 +23,9 @@ class CustomDocChatbot:
         self.embedding_model = utils.configure_embedding_model()
 
     @st.spinner('Analyzing documents..')
-    def import_source_documents(self):
-        # load documents
-        docs = []
-        files = []
-        for file in os.listdir("data"):
-            if file.endswith(".txt"):
-                with open(os.path.join("data", file)) as f:
-                    docs.append(os.path.join("data", f.read()))
-                    files.append(file)
-
-        # Split documents and store in vector db
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200
-        )
-
-        splits = []
-        for i, doc in enumerate(docs):
-            for chunk in text_splitter.split_text(doc):
-                splits.append(Document(page_content=chunk, metadata={"source": files[i]}))
-
-        vectordb = DocArrayInMemorySearch.from_documents(splits, self.embedding_model)
+    def find_solution(self, ticket: str):
+        document = Document(page_content=ticket)
+        vectordb = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_CODE)
 
         # Define retriever
         retriever = vectordb.as_retriever(
@@ -94,28 +74,53 @@ class CustomDocChatbot:
             ticketName = st.text_input(label="ticket name")
             ticketDescription = st.text_input(label="ticket description")
             ticketEnvironment = st.text_input(label="ticket environment")
+            ticketUrl = st.text_input(label="URL")
+            ticketUser = st.selectbox(
+                "User",
+                ("guest", "registered", "premium", "admin"),
+                index=None,
+                placeholder="Select user type",
+            )
+            ticketDevice = st.selectbox(
+                "Device type",
+                ("Desktop", "Mobile"),
+                index=None,
+                placeholder="Select device type",
+            )
             ticketImage =  st.file_uploader("ticket image")
-            submitted = st.form_submit_button("submit")
+            submitted = st.form_submit_button()
 
             if submitted:
-                qa_chain = self.import_source_documents()
-
-                utils.display_msg(ticketDescription, 'user')
 
                 if ticketImage  is not None:
                     #read file as bytes:
                     bytes_data = ticketImage .getvalue() #TODO handle file
 
+                ticket = Ticket(
+                    ticketName,
+                    ticketDescription,
+                    ticketEnvironment,
+                    ticketUrl,
+                    ticketDevice,
+                    ticketUser,
+                    []
+                )
+
+
+                qa_chain = self.find_solution(ticket.__str__())
+
+                utils.display_msg(ticket.__str__(), 'user')
+
                 with st.chat_message("assistant"):
                     st_cb = StreamHandler(st.empty())
 
                     result = qa_chain.invoke(
-                        {"question":ticketDescription},
+                        {"question":ticket.__str__()},
                         {"callbacks": [st_cb]}
                     )
                     response = result["answer"]
                     st.session_state.messages.append({"role": "assistant", "content": response})
-                    utils.print_qa(CustomDocChatbot, ticketDescription, response)
+                    utils.print_qa(CustomDocChatbot, ticket.__str__(), response)
 
                     # to show references
                     for  doc in result['source_documents']:
