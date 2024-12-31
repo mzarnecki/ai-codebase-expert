@@ -1,5 +1,6 @@
 import streamlit as st
 from langchain.agents.chat.base import ChatAgent
+from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_models import ChatOpenAI
@@ -19,8 +20,29 @@ from app.streaming import StreamHandler
 
 class LLMChainProvider:
     @st.spinner('Analyzing documents..')
+    def getLLMPrparationChainResult(llm: ChatOpenAI, ticket: str):
+        # Setup memory for contextual conversation
+        memory = ConversationBufferMemory()
+
+        # Setup LLM and QA chain
+        llm_chain = ConversationChain(
+            llm=llm,
+            memory=memory,
+            verbose=False
+        )
+        result = llm_chain.invoke(input={"input": """
+            You are a chatbot tasked with solving software project issues.
+            The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
+            Prepare message that will be used for sematic search in database for project code and project documentation.
+            Prepare message based on issue description below. Say which files should be checked.
+            """ + ticket},
+        )
+
+        return result
+
+    @st.spinner('Analyzing documents..')
     def getLLMConversationalChainResult(llm: ChatOpenAI, ticket: str)->ConversationalRetrievalChain:
-        vectordb = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_DOCS.value)
+        vectordb = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_CODE.value)
 
         # Define retriever
         retriever = vectordb.as_retriever(

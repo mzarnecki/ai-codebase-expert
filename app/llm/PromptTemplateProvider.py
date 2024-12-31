@@ -16,3 +16,14 @@ class PromptTemplateProvider(object):
             
             """,
             )
+
+    def getPromptRAG(ticket: str):
+        return SystemMessagePromptTemplate.from_template(
+            """
+            You are a chatbot tasked with solving software project issues.
+            The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
+            Prepare message that will be used for sematic search in database for project code and project documentation.
+            Prepare message based on issue description below. Say which files should be checked.
+            """ + ticket + """
+            """,
+            )

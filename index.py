@@ -26,7 +26,10 @@ class CustomDocChatbot:
             utils.display_msg(ticket.__str__(), 'user')
 
             with st.chat_message("assistant"):
-                result = LLMChainProvider.getLLMConversationalChainResult(self.llm, ticket.__str__())
+                resultRag = LLMChainProvider.getLLMPrparationChainResult(self.llm, ticket.__str__())
+                print(resultRag['response'])
+                print("\n")
+                result = LLMChainProvider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + resultRag['response'])
                 # result = LLMChainProvider.getLLMAgent(self.llm, ticket.__str__())
                 response = result["answer"]
                 st.session_state.messages.append({"role": "assistant", "content": response})
