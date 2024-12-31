@@ -42,7 +42,7 @@ def display_msg(msg, author):
     st.session_state.messages.append({"role": author, "content": msg})
     st.chat_message(author).write(msg)
 
-def configure_llm():
+def configure_llm() -> ChatOpenAI:
     llm = ChatOpenAI(model_name='gpt-4o', temperature=0, streaming=True)
     return llm
 

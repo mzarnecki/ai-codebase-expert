@@ -10,9 +10,9 @@ from langchain_core.tools import Tool
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.riza.command import ExecPython
 
-from lib.agent.tools.FrameworkDocumentation import FrameworkDocumentation
-from lib.agent.tools.ProjectCode import ProjectCode
-from lib.agent.tools.ProjectDocumentation import ProjectDocumentation
+from app.llm.agent.tools.FrameworkDocumentation import FrameworkDocumentation
+from app.llm.agent.tools.ProjectCode import ProjectCode
+from app.llm.agent.tools.ProjectDocumentation import ProjectDocumentation
 
 import sqlite3
 import requests

@@ -1,5 +1,5 @@
 from langchain_postgres import PGVector
-from lib import utils
+from app import utils
 
 class VectorStore:
     def get_vector_store(collection_name: str)->PGVector:
