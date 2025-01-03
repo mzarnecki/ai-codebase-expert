@@ -7,11 +7,13 @@ class Ticket:
         layout: Layout,
     ):
         self.subject = layout.ticketSubject
-        self.environment = layout.ticketEnvironment
         self.description = layout.ticketDescription
         self.url = layout.ticketUrl
         self.device = layout.ticketDevice
         self.user = layout.ticketUser
+        self.code = layout.ticketCode
+        self.code = self.code.replace("{", "&#123;")
+        self.code = self.code.replace("}", "&#125;")
 
         if layout.ticketImage  is not None:
             #read file as bytes:
@@ -19,7 +21,6 @@ class Ticket:
 
     def __str__(self):
         return (f'''subject: {self.subject}\n
-environment: {self.environment}\n
 description: {self.description}\n
 url: {self.url}\n
 device: {self.device}\n

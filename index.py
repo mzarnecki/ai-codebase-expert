@@ -5,8 +5,8 @@ from app.llm.LLMChainProvider import LLMChainProvider
 from app.model.Ticket import Ticket
 import streamlit as st
 
-st.set_page_config(page_title="AI PROJECT TICKET SOLVER", page_icon="📄")
-st.header('AI PROJECT TICKET SOLVER')
+st.set_page_config(page_title="COMPANYHOUSE CODEBASE EXPERT", page_icon="📄")
+st.header('COMPANYHOUSE CODEBASE EXPERT')
 st.write('AI llm capable of integration new features into project and solving issues based on ticket description.')
 
 class CustomDocChatbot:
@@ -27,10 +27,10 @@ class CustomDocChatbot:
 
             provider = LLMChainProvider()
             with st.chat_message("assistant"):
-                resultRag = provider.getLLMPrparationChainResult(self.llm, ticket.__str__())
+                resultRag = provider.getLLMPrparationChainResult(self.llm, ticket.__str__(), ticket.code)
                 print(resultRag['response'])
                 print("\n")
-                result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + resultRag['response'])
+                result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + resultRag['response'], ticket.code)
                 # result = provider.getLLMAgent(self.llm, ticket.__str__())
                 response = result["answer"]
                 st.session_state.messages.append({"role": "assistant", "content": response})

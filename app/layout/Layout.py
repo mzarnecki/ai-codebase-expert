@@ -3,7 +3,6 @@ class Layout:
     def __init__(self):
         self.ticketSubject = st.text_input(label="ticket subject")
         self.ticketDescription = st.text_area(label="ticket description")
-        self.ticketEnvironment = st.text_area(label="ticket environment")
         self.ticketUrl = st.text_input(label="URL")
         self.ticketUser = st.selectbox(
             "User",
@@ -18,4 +17,5 @@ class Layout:
             placeholder="Select device type",
         )
         self.ticketImage =  st.file_uploader("ticket image")
+        self.ticketCode = st.text_area(label="ticket code")
         self.submitted = st.button('Submit')
