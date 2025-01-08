@@ -24,6 +24,7 @@ class PromptTemplateProvider(object):
             - Take a step by step approach in your problem-solving
             
             Considering above create solution for ticket described below.
+            You will be also supplied with code solution proposal.
             Write working code solution and add explanation and additional instructions related to using this code if needed.\n\n 
             """ + ticket + "\n\nRelated code:" + code  + """\n\nFor solution use information from project code and documentation below.
             {context}
@@ -33,6 +34,7 @@ class PromptTemplateProvider(object):
     def getPromptRAG(ticket: str, proj_dir_structure: str) -> str:
         return """
             You are a chatbot tasked with solving software project issues.
+            You will be also supplied with code solution proposal.
             The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
             Prepare message that will be used for sematic search in database for project code and project documentation.
             Prepare message based on issue description below. Say which files should be checked.
