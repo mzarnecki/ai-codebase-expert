@@ -37,5 +37,6 @@ class PromptTemplateProvider(object):
             You will be also supplied with code solution proposal.
             The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
             Prepare message that will be used for sematic search in database for project code and project documentation.
+            This message should contain some code if possible to match also files with code in vector db.
             Prepare message based on issue description below. Say which files should be checked.
             """ + ticket + "\n\n" + proj_dir_structure

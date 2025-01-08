@@ -46,9 +46,9 @@ def configure_llm() -> ChatOpenAI:
     llm = ChatOpenAI(model_name='gpt-4o', temperature=0, streaming=True)
     return llm
 
-def print_qa(cls, question, answer):
-    log_str = "\nUsecase: {}\nQuestion: {}\nAnswer: {}\n" + "------"*10
-    logger.info(log_str.format(cls.__name__, question, answer))
+def print_qa(cls, question: str, concepts: str, answer: str):
+    log_str = "\nUsecase: {}\nQuestion: {}\nConcepts: {}\nAnswer: {}\n" + "------"*10
+    logger.info(log_str.format(cls.__name__, question, concepts, answer))
 
 @st.cache_resource
 def configure_embedding_model():

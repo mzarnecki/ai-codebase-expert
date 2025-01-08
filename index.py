@@ -10,7 +10,7 @@ st.set_page_config(page_title="COMPANYHOUSE CODEBASE EXPERT", page_icon="📄")
 st.header('COMPANYHOUSE CODEBASE EXPERT')
 st.write('AI llm capable of integration new features into project and solving issues based on ticket description.')
 
-class CustomDocChatbot:
+class CodebaseChatbot:
 
     def __init__(self):
         load_dotenv(find_dotenv())
@@ -30,14 +30,17 @@ class CustomDocChatbot:
             provider = LLMChainProvider()
             with st.chat_message("assistant"):
                 resultRag = provider.getLLMPrparationChainResult(self.llm, ticket.__str__(), ticket.code)
-                print(resultRag['response'])
+                responseRag = resultRag['response']
+                print(responseRag)
                 print("\n")
-                ragOutput = resultRag['response'].replace('{', '{{').replace('}', '}}')
-                result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + ragOutput, ticket.code)
-                # result = provider.getLLMAgent(self.llm, ticket.__str__())
+                ragOutput = responseRag.replace('{', '{{').replace('}', '}}')
+                if layout.useAgent:
+                    result = provider.getLLMAgent(self.llm,  ticket.__str__() + ragOutput, ticket.code)
+                else:
+                    result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + ragOutput, ticket.code)
                 response = result["answer"]
                 st.session_state.messages.append({"role": "assistant", "content": response})
-                utils.print_qa(CustomDocChatbot, ticket.__str__(), response)
+                utils.print_qa(CodebaseChatbot,  ticket.__str__(), responseRag, response)
 
                 # to show references
                 print(result['source_documents'])
@@ -48,5 +51,5 @@ class CustomDocChatbot:
                         st.caption(doc.page_content)
 
 if __name__ == "__main__":
-    obj = CustomDocChatbot()
+    obj = CodebaseChatbot()
     obj.main()

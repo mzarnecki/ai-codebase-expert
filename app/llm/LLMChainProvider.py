@@ -7,6 +7,7 @@ from langchain.retrievers import MergerRetriever
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import create_retriever_tool
 
 from app.db.EnumDocsCollection import EnumDocsCollection
 from app.db.VectorStore import VectorStore
@@ -16,8 +17,11 @@ from langchain.agents import AgentExecutor
 
 from app.streaming import StreamHandler
 
-
 class LLMChainProvider:
+
+    def __init__(self):
+        self.st_cb = StreamHandler(st.empty())
+
     @st.spinner('Analyzing documents..')
     def getLLMPrparationChainResult(self, llm: ChatOpenAI, ticket: str, code: str):
         # Setup memory for contextual conversation
@@ -30,12 +34,13 @@ class LLMChainProvider:
             verbose=False,
         )
 
-        result = llm_chain.invoke(input={"input": """
+        result = llm_chain.invoke({"input": """
             You are a chatbot tasked with solving software project issues.
             The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
             Prepare message that will be used for sematic search in database for project code, project documentation and framework documentation.
             Prepare list of information and concepts that are relevant to answering for the problem described below. Take also into consideration directory structure of the project
             TICKET:\n""" + ticket + "\n\nPROJECT DIRECTORY STRUCTURE:\n" + self.getProjectDirStructure() + "\n\nRELATED CODE:\n" + code},
+            {"callbacks": [self.st_cb]}
         )
 
         return result
@@ -47,26 +52,8 @@ class LLMChainProvider:
 
     @st.spinner('Analyzing documents..')
     def getLLMConversationalChainResult(self, llm: ChatOpenAI, ticket: str, code: str)->ConversationalRetrievalChain:
-        # Define retrievers
-        vectordbcode = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_CODE.value)
-        retrievercode = vectordbcode.as_retriever(
-            search_type='similarity',
-            search_kwargs={'k':5}
-        )
-
-        vectordbprojdocs = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_DOCS.value)
-        retrieverprojdocs = vectordbprojdocs.as_retriever(
-            search_type='similarity',
-            search_kwargs={'k':2}
-        )
-
-        vectordbframework = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_CODE.value)
-        retrieverframework = vectordbframework.as_retriever(
-            search_type='similarity',
-            search_kwargs={'k':2}
-        )
-
-        retriever = MergerRetriever(retrievers = [retrievercode, retrieverframework, retrieverprojdocs])
+        retrievercode, retrieverframework, retrieverprojdocs, retrieverbaseinfo = self._getRetrievers()
+        retriever = MergerRetriever(retrievers = [retrievercode, retrieverframework, retrieverprojdocs, retrieverbaseinfo])
 
         # Setup memory for contextual conversation
         memory = ConversationBufferMemory(
@@ -88,21 +75,75 @@ class LLMChainProvider:
             verbose=True,
             combine_docs_chain_kwargs={"prompt": prompt}
         )
-        st_cb = StreamHandler(st.empty())
         result = llm_chain.invoke(
             {"question": "Find solution for described issue.", "closure": "", "main": ""},
-            {"callbacks": [st_cb]}
+            {"callbacks": [self.st_cb]}
         )
 
         return result
 
-    def getLLMAgent(self, llm: ChatOpenAI, ticket: str):
+    def getLLMAgent(self, llm: ChatOpenAI, ticket: str, code: str):
+        retrievercode, retrieverframework, retrieverprojdocs, retrieverbaseinfo = self._getRetrievers()
+        retriever_code_tool = create_retriever_tool(
+            retrievercode,
+            name="search_project_code",
+            description="Searches and returns code files content from project.",
+        )
 
-        tools = [DuckDuckGoSearchResults()]
+        retriever_framework_tool = create_retriever_tool(
+            retrievercode,
+            name="search_framework",
+            description="Searches and returns examples and information from framework documentation.",
+        )
+
+        retriever_project_documentation_tool = create_retriever_tool(
+            retrievercode,
+            name="search_project_documentation",
+            description="Searches and returns project documentation matching pages.",
+        )
+
+        retriever_base_info_tool = create_retriever_tool(
+            retrieverbaseinfo,
+            name="search_base_project_information",
+            description="Searches and returns project base information like dir structure and db schema.",
+        )
+
+        tools = [DuckDuckGoSearchResults(), retriever_code_tool, retriever_framework_tool,
+                 retriever_project_documentation_tool, retriever_base_info_tool]
         agent = ChatAgent.from_llm_and_tools(llm, tools, verbose=True)
-        st_cb = StreamHandler(st.empty())
-        executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools)
+        executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, handle_parsing_errors=True)
+        input = PromptTemplateProvider.getPromptTemplate(ticket, code)
 
-        input =  PromptTemplateProvider.getPromptRAG(ticket, self.getProjectDirStructure())
+        return executor.invoke(
+            {"input": input, "closure": "", "main": ""},
+            {"callbacks": [self.st_cb]}
+        )
 
-        return executor.run(input= input, callbacks=[st_cb])
+
+    def _getRetrievers(self):
+        # Define retrievers
+        vectordbcode = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_CODE.value)
+        retrievercode = vectordbcode.as_retriever(
+            search_type='mmr',
+            search_kwargs={'k':5}
+        )
+
+        vectordbprojdocs = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_DOCS.value)
+        retrieverprojdocs = vectordbprojdocs.as_retriever(
+            search_type='mmr',
+            search_kwargs={'k':3}
+        )
+
+        vectordbframework = VectorStore.get_vector_store(EnumDocsCollection.COMPANYHOUSE_PROJ_CODE.value)
+        retrieverframework = vectordbframework.as_retriever(
+            search_type='mmr',
+            search_kwargs={'k':3}
+        )
+
+        vectordbbaseinfo = VectorStore.get_vector_store(EnumDocsCollection.BASE_INFO.value)
+        retrieverbaseinfo = vectordbbaseinfo.as_retriever(
+            search_type='mmr',
+            search_kwargs={'k':3}
+        )
+
+        return retrievercode, retrieverprojdocs, retrieverframework, retrieverbaseinfo

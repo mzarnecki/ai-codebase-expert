@@ -16,6 +16,7 @@ class Layout:
             index=None,
             placeholder="Select device type",
         )
-        self.ticketImage =  st.file_uploader("ticket image")
-        self.ticketCode = st.text_area(label="ticket code")
+        self.ticketImage =  st.file_uploader("Image")
+        self.ticketCode = st.text_area(label="Related code samples")
+        self.useAgent = st.checkbox("Use agent")
         self.submitted = st.button('Submit')
