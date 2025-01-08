@@ -30,7 +30,8 @@ class CustomDocChatbot:
                 resultRag = provider.getLLMPrparationChainResult(self.llm, ticket.__str__(), ticket.code)
                 print(resultRag['response'])
                 print("\n")
-                result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + resultRag['response'], ticket.code)
+                ragOutput = resultRag['response'].replace('{', '{{').replace('}', '}}')
+                result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + ragOutput, ticket.code)
                 # result = provider.getLLMAgent(self.llm, ticket.__str__())
                 response = result["answer"]
                 st.session_state.messages.append({"role": "assistant", "content": response})
