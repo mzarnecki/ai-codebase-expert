@@ -4,6 +4,7 @@ from app.layout.Layout import Layout
 from app.llm.LLMChainProvider import LLMChainProvider
 from app.model.Ticket import Ticket
 import streamlit as st
+from dotenv import load_dotenv, find_dotenv
 
 st.set_page_config(page_title="COMPANYHOUSE CODEBASE EXPERT", page_icon="📄")
 st.header('COMPANYHOUSE CODEBASE EXPERT')
@@ -12,6 +13,7 @@ st.write('AI llm capable of integration new features into project and solving is
 class CustomDocChatbot:
 
     def __init__(self):
+        load_dotenv(find_dotenv())
         utils.sync_st_session()
         self.llm = utils.configure_llm()
         self.embedding_model = utils.configure_embedding_model()
