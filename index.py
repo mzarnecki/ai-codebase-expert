@@ -29,7 +29,7 @@ class CodebaseChatbot:
 
             provider = LLMChainProvider()
             with st.chat_message("assistant"):
-                resultRag = provider.getLLMPrparationChainResult(self.llm, ticket.__str__(), ticket.code)
+                resultRag = provider.getLLMPreparationChainResult(self.llm, ticket.__str__(), ticket.code)
                 responseRag = resultRag['response']
                 print(responseRag)
                 print("\n")

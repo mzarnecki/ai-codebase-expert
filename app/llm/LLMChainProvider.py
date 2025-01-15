@@ -23,7 +23,7 @@ class LLMChainProvider:
         self.st_cb = StreamHandler(st.empty())
 
     @st.spinner('Analyzing documents..')
-    def getLLMPrparationChainResult(self, llm: ChatOpenAI, ticket: str, code: str):
+    def getLLMPreparationChainResult(self, llm: ChatOpenAI, ticket: str, code: str):
         # Setup memory for contextual conversation
         memory = ConversationBufferMemory()
 
@@ -37,7 +37,7 @@ class LLMChainProvider:
         result = llm_chain.invoke({"input": """
             You are a chatbot tasked with solving software project issues.
             The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
-            Prepare message that will be used for sematic search in database for project code, project documentation and framework documentation.
+            Prepare message that will be used for semantic search in database for project code, project documentation and framework documentation.
             Prepare list of information and concepts that are relevant to answering for the problem described below. Take also into consideration directory structure of the project
             TICKET:\n""" + ticket + "\n\nPROJECT DIRECTORY STRUCTURE:\n" + self.getProjectDirStructure() + "\n\nRELATED CODE:\n" + code},
             {"callbacks": [self.st_cb]}
