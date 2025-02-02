@@ -10,7 +10,7 @@ class PHPParser:
                 "class_name": None,
                 "parent_class": None,
                 "methods": None,
-                "dependencies": None,
+                "dependencies": [],
             }
         result = {
             "class_name": self.extract_class_name(code),
