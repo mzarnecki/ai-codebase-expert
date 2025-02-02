@@ -18,5 +18,5 @@ class Layout:
         )
         self.ticketImage =  st.file_uploader("Image")
         self.ticketCode = st.text_area(label="Related code samples")
-        self.useAgent = st.checkbox("Use agent")
+        self.useAgent = st.radio("Use agent", options=("single-request", "agent", "multi-agent"))
         self.submitted = st.button('Submit')

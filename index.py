@@ -29,15 +29,29 @@ class CodebaseChatbot:
 
             provider = LLMChainProvider()
             with st.chat_message("assistant"):
-                resultRag = provider.getLLMPreparationChainResult(self.llm, ticket.__str__(), ticket.code)
+                resultRag = provider.get_llm_preparation_chain_result(self.llm, ticket.__str__(), ticket.code)
                 responseRag = resultRag['response']
                 print(responseRag)
                 print("\n")
                 ragOutput = responseRag.replace('{', '{{').replace('}', '}}')
-                if layout.useAgent:
-                    result = provider.getLLMAgent(self.llm,  ticket.__str__() + ragOutput, ticket.code)
+                if layout.useAgent == 'agent':
+                    result = provider.get_llm_agent(
+                        self.llm,
+                        ticket.__str__() + ragOutput,
+                        ticket.code
+                    )
+                elif layout.useAgent == 'multi-agent':
+                    result = provider.get_multi_agent_system(
+                        self.llm,
+                        ticket.__str__()  + ragOutput,
+                        ticket.code
+                    )
                 else:
-                    result = provider.getLLMConversationalChainResult(self.llm,  ticket.__str__() + ragOutput, ticket.code)
+                    result = provider.get_llm_conversational_chain_result(
+                        self.llm,
+                        ticket.__str__() + ragOutput,
+                        ticket.code
+                    )
                 response = result["answer"]
                 st.session_state.messages.append({"role": "assistant", "content": response})
                 utils.print_qa(CodebaseChatbot,  ticket.__str__(), responseRag, response)

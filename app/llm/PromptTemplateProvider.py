@@ -1,7 +1,8 @@
 from langchain_core.prompts import SystemMessagePromptTemplate
 
 class PromptTemplateProvider(object):
-    def getPromptTemplate(ticket: str, code: str) -> SystemMessagePromptTemplate:
+
+    def get_prompt_template(ticket: str, code: str) -> SystemMessagePromptTemplate:
         text = """You are a Senior Software Engineer with expertise in code analysis.
             You have a strong ability to troubleshoot and resolve issues based on the information provided.
             If you are uncertain about the answer, simply state that you do not know.
@@ -34,7 +35,7 @@ class PromptTemplateProvider(object):
         """
         return SystemMessagePromptTemplate.from_template(text)
 
-    def getPromptRAG(ticket: str, proj_dir_structure: str) -> str:
+    def get_prompt_RAG(ticket: str, proj_dir_structure: str) -> str:
         return """
             You are a chatbot tasked with solving software project issues.
             You will be also supplied with code solution proposal.
