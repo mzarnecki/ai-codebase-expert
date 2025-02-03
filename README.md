@@ -23,6 +23,10 @@ and based on retrieved information solve project issues
 4. Adjust directories names in [initVectorDB.ipynb](notebook/initVectorDB.ipynb) and run this notebook to import project resources into vector db.
 5. Start streamlit app with `streamlit run index.py` - it will open application in browser where you can provide details of issue that needs to be solved.
 
+## ✔️ Run unit tests
+To run unit tests use command below:
+`python -m unittest discover test "*Test.py"`
+
 ## 👥 Contributing
 
 Found a bug or have an improvement in mind? Please:

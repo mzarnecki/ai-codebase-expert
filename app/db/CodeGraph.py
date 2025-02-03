@@ -6,6 +6,12 @@ class CodeGraph:
     def __init__(self):
         self.graph = nx.DiGraph()
 
+    @classmethod
+    def load(cls, path):
+        with open(path, 'rb') as f:
+            instance = pickle.load(f)
+        return instance
+
     def add_file(self, metadata):
         self.graph.add_node(metadata['file_path'], **metadata)
         # Add edges for class inheritance
@@ -15,29 +21,13 @@ class CodeGraph:
         for dep in metadata.get('dependencies', []):
             self.graph.add_edge(metadata['file_path'], dep)
 
-    @classmethod
-    def load(cls, path):
-        instance = cls()
-        with open(path, 'rb') as f:
-            instance.graph = pickle.load(f)
-        return instance
-
     def get_relations(self, file_path):
         node = self.graph.nodes.get(file_path, {})
+        all_related = list(nx.descendants(self.graph, file_path)) + list(node.get('methods', []))
+        all_related.sort()
         return {
             'parent': node.get('parent_class'),
             'dependencies': node.get('dependencies', []),
-            'all_related': list(nx.descendants(self.graph, file_path))
+            'methods': node.get('methods', []),
+            'all_related': all_related
         }
-
-
-# Usage in retrieval
-def enhance_with_relations(retrieved_docs, code_graph):
-    enhanced_docs = []
-    for doc in retrieved_docs:
-        related_nodes = list(nx.descendants(code_graph.graph, doc.metadata['file_path']))
-        enhanced_docs.append({
-            **doc,
-            "related_files": related_nodes
-        })
-    return enhanced_docs

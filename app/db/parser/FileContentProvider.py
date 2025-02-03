@@ -1,7 +1,7 @@
 import os
 import re
 
-from app.db.parser.HTMLPurifyer import HTMLPurifyer
+from app.db.parser.HTMLPurifier import HTMLPurifier
 
 class FileContentProvider:
 
@@ -14,7 +14,7 @@ class FileContentProvider:
             try:
                 text = f.read().decode(errors='replace')
                 if file.endswith(".html"):
-                    text = HTMLPurifyer.purify(text)
+                    text = HTMLPurifier.purify(text)
                 text = re.sub(r'\{[\w_-]+\}', '', text) #remove curly braces as they are interpreted as template params
                 return text
             except Exception as e:

@@ -24,7 +24,7 @@ class LLMChainProvider:
 
     def __init__(self):
         self.st_cb = StreamHandler(st.empty())
-        self.code_graph = CodeGraph.load('../graph/graph.pickle')  # Load pre-built graph
+        self.code_graph = CodeGraph.load('../data/graph/graph.pickle')  # Load pre-built graph
 
     def _enhance_documents(self, docs):
         enhanced = []

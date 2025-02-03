@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 
-class HTMLPurifyer:
+class HTMLPurifier:
     def purify(html: str)->str:
         soup = BeautifulSoup(html, features="html.parser")
 
