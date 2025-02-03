@@ -52,17 +52,21 @@ class CodebaseChatbot:
                         ticket.__str__() + ragOutput,
                         ticket.code
                     )
-                response = result["answer"]
+                if 'answer' in result:
+                    response = result["answer"]
+                else:
+                    response = result["output"]
                 st.session_state.messages.append({"role": "assistant", "content": response})
                 utils.print_qa(CodebaseChatbot,  ticket.__str__(), responseRag, response)
 
                 # to show references
-                print(result['source_documents'])
-                for  doc in result['source_documents']:
-                    filename = os.path.basename(doc.metadata['source'])
-                    ref_title = f":blue[Source document: {filename}]"
-                    with st.popover(ref_title):
-                        st.caption(doc.page_content)
+                if 'source_document' in result:
+                    print(result['source_documents'])
+                    for  doc in result['source_documents']:
+                        filename = os.path.basename(doc.metadata['source'])
+                        ref_title = f":blue[Source document: {filename}]"
+                        with st.popover(ref_title):
+                            st.caption(doc.page_content)
 
 if __name__ == "__main__":
     obj = CodebaseChatbot()

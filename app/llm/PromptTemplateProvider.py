@@ -27,6 +27,8 @@ class PromptTemplateProvider(object):
                 Always base your answers on the provided code context
                 Adopt a methodical, step-by-step approach to problem-solving
             
+            Avoid repeating same answer multiple times.
+            
             Using these guidelines, create a solution for the ticket described below.
             You will also be provided with a proposed solution for the code to evaluate.
             Write working code solution and add explanation and additional instructions related to using this code if needed.\n\n 
