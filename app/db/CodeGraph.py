@@ -23,11 +23,14 @@ class CodeGraph:
 
     def get_relations(self, file_path):
         node = self.graph.nodes.get(file_path, {})
-        all_related = list(nx.descendants(self.graph, file_path)) + list(node.get('methods', []))
+        methods = node.get('methods', [])
+        if not methods:
+            methods = []
+        all_related = list(nx.descendants(self.graph, file_path)) + list(methods)
         all_related.sort()
         return {
             'parent': node.get('parent_class'),
             'dependencies': node.get('dependencies', []),
-            'methods': node.get('methods', []),
+            'methods': methods,
             'all_related': all_related
         }

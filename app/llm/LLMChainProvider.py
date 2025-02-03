@@ -8,6 +8,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import create_retriever_tool
 
 from app.db.CodeGraph import CodeGraph
@@ -18,41 +19,16 @@ from app.llm.PromptTemplateProvider import PromptTemplateProvider
 from langchain.agents import AgentExecutor
 
 from app.llm.agent.AgentSystem import AgentSystem
+from app.llm.retriever.CustomGraphRetriever import CustomGraphRetriever
+from app.llm.retriever.RetrieverFactory import RetrieverFactory
 from app.streaming import StreamHandler
 
 class LLMChainProvider:
 
     def __init__(self):
         self.st_cb = StreamHandler(st.empty())
-        self.code_graph = CodeGraph.load('../data/graph/graph.pickle')  # Load pre-built graph
-
-    def _enhance_documents(self, docs):
-        enhanced = []
-        for doc in docs:
-            metadata = doc.metadata
-            relations = self.code_graph.get_relations(metadata['file_path'])
-
-            # Create enhanced metadata
-            enhanced_metadata = {
-                **metadata,
-                'parent_file': relations['parent'],
-                'dependency_files': relations['dependencies'],
-                'all_related_files': relations['all_related']
-            }
-
-            # Create new document with expanded content
-            enhanced_content = (
-                f"File: {metadata['file_path']}\n"
-                f"Parent: {relations['parent'] or 'None'}\n"
-                f"Dependencies: {', '.join(relations['dependencies']) or 'None'}\n"
-                f"Content:\n{doc.page_content}"
-            )
-
-            enhanced.append(Document(
-                page_content=enhanced_content,
-                metadata=enhanced_metadata
-            ))
-        return enhanced
+        self.code_graph = CodeGraph.load('data/graph/graph.pickle')  # Load pre-built graph
+        self.retriever_factory = RetrieverFactory()
 
     @st.spinner('Analyzing documents..')
     def get_llm_preparation_chain_result(self, llm: ChatOpenAI, ticket: str, code: str):
@@ -65,26 +41,26 @@ class LLMChainProvider:
             memory=memory,
             verbose=False,
         )
-
-        result = llm_chain.invoke({"input": """
+        prompt = {"input": """
             You are a chatbot tasked with solving software project issues.
             The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
             Prepare message that will be used for semantic search in database for project code, project documentation and framework documentation.
             Prepare list of information and concepts that are relevant to answering for the problem described below. Take also into consideration directory structure of the project
             TICKET:\n""" + ticket + "\n\nPROJECT DIRECTORY STRUCTURE:\n" + self.get_project_dir_structure() + "\n\nRELATED CODE:\n" + code},
-                                  {"callbacks": [self.st_cb]}
-                                  )
+        {"callbacks": [self.st_cb]}
+
+        result = llm_chain.invoke(prompt)
 
         return result
 
     def get_project_dir_structure(self):
-        with open("data/baseInformation/projectDirectoryStructure.txt", "r") as f:
+        with open("data/documentation/baseInformation/projectDirectoryStructure.txt", "r") as f:
             dir_structure = f.readlines()
         return "\n".join(dir_structure)
 
     @st.spinner('Analyzing documents..')
-    def get_llm_conversational_chain_result(self, llm: ChatOpenAI, ticket: str, code: str) -> ConversationalRetrievalChain:
-        retriever_code, retriever_docs = self._get_retrievers()
+    def get_llm_conversational_chain_result(self, llm: ChatOpenAI, ticket: str, code: str):
+        retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
 
         # Create merger retriever that combines both sources
         merged_retriever = MergerRetriever(
@@ -101,7 +77,7 @@ class LLMChainProvider:
         system_message_prompt = PromptTemplateProvider.get_prompt_template(ticket, code)
         prompt = ChatPromptTemplate.from_messages([system_message_prompt])
 
-        return ConversationalRetrievalChain.from_llm(
+        llm_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
             retriever=merged_retriever,
             memory=memory,
@@ -110,8 +86,15 @@ class LLMChainProvider:
             combine_docs_chain_kwargs={"prompt": prompt}
         )
 
+        result = llm_chain.invoke(
+            {"question": "Find solution for described issue.", "closure": "", "main": ""},
+            {"callbacks": [self.st_cb]}
+        )
+
+        return result
+
     def get_llm_agent(self, llm: ChatOpenAI, ticket: str, code: str):
-        retriever_code, retriever_docs = self._get_retrievers()
+        retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
         retriever_code_tool = create_retriever_tool(
             retriever_code,
             name="search_project_code",
@@ -133,29 +116,6 @@ class LLMChainProvider:
             {"input": input, "closure": "", "main": ""},
             {"callbacks": [self.st_cb]}
         )
-
-
-    def _get_retrievers(self):
-        vectordbcode = VectorStore.get_vector_store(EnumDocsCollection.CODE.value)
-
-        # Create graph-aware retriever
-        base_retriever = vectordbcode.as_retriever(
-            search_type='mmr',
-            search_kwargs={'k': 8, "lambda_mult": 0.5}
-        )
-
-        # Wrap with graph enhancement
-        graph_retriever = base_retriever | self._enhance_documents
-
-        # Documentation retriever remains the same
-        vectordbdocs = VectorStore.get_vector_store(EnumDocsCollection.DOCUMENTATION.value)
-        retrieverdocs = vectordbdocs.as_retriever(
-            search_type='mmr',
-            search_kwargs={'k': 8, "lambda_mult": 0.5}
-        )
-
-        return graph_retriever, retrieverdocs
-
 
     def get_multi_agent_system(self, llm: ChatOpenAI, ticket: str, code: str):
         agent_system = AgentSystem(llm)
