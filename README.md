@@ -2,7 +2,7 @@
 [PROJECT IN PROGRESS]
 
 Introducing tool to solve development tasks and bug-fix tickets in large projects.
-This project is using GPT-4o LLMs and langchain agents to search the project code base and documentation to support development work and fixing issues.
+This project is using GPT-4o LLM and langchain agents to search the project code base and documentation to support development work and fixing issues.
 
 <img src="img/codebase_expert.gif" />
 
