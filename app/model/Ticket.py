@@ -1,10 +1,10 @@
-from app.layout.Layout import Layout
+from app.layout.Form import Form
 from app.model.TicketImage import TicketImage
 
 class Ticket:
     def __init__(
         self,
-        layout: Layout,
+        layout: Form,
     ):
         self.subject = layout.ticketSubject
         self.description = layout.ticketDescription
@@ -12,12 +12,13 @@ class Ticket:
         self.device = layout.ticketDevice
         self.user = layout.ticketUser
         self.code = layout.ticketCode
-        self.code = self.code.replace("{", "&#123;")
-        self.code = self.code.replace("}", "&#125;")
+        self.code = self.code.replace("{", "&#123;").replace("}", "&#125;")
+        self.image = None
 
         if layout.ticketImage  is not None:
             #read file as bytes:
-            bytes_data = layout.ticketImage .getvalue() #TODO handle file
+            bytes_data = layout.ticketImage.getvalue()
+            self.image = TicketImage(bytes_data, layout.ticketImage.name)
 
     def __str__(self):
         return (f'''subject: {self.subject}\n

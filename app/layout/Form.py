@@ -1,5 +1,5 @@
 import streamlit as st
-class Layout:
+class Form:
     def __init__(self):
         self.ticketSubject = st.text_input(label="ticket subject")
         self.ticketDescription = st.text_area(label="ticket description")
@@ -18,5 +18,5 @@ class Layout:
         )
         self.ticketImage =  st.file_uploader("Image")
         self.ticketCode = st.text_area(label="Related code samples")
-        self.useAgent = st.radio("Use agent", options=("single-request", "agent", "multi-agent"))
+        self.use_agent = st.radio("Use agent", options=("single-request", "agent", "multi-agent"))
         self.submitted = st.button('Submit')
