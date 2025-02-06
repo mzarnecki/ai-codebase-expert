@@ -35,7 +35,7 @@ class AgentSystem:
             "Critic",
             """You are a senior code reviewer. Evaluate the proposed solution for:
             - Technical correctness
-            - Adherence to Yii2 best practices
+            - Adherence to best coding practices
             - Architecture alignment
             - Potential edge cases
             Return either APPROVED or REVISION_REQUEST with feedback."""

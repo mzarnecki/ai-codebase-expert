@@ -58,3 +58,11 @@ def configure_embedding_model():
 def sync_st_session():
     for k, v in st.session_state.items():
         st.session_state[k] = v
+
+
+def styleLayout():
+    st.markdown("""
+    <style>
+
+    </style>
+    """, unsafe_allow_html=True)

@@ -3,7 +3,7 @@ from typing import Optional
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManagerForToolRun
 class FrameworkDocumentation(BaseTool):
     name = "Framework documentation search"
-    description = "search Yii2 framework documentation"
+    description = "search framework documentation"
 
     def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         # return framework documentation needed

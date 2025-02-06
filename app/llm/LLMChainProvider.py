@@ -10,7 +10,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import create_retriever_tool
-from langchain_openai import OpenAI
+from openai import OpenAI as OpenAIModel
 
 from app.db.CodeGraph import CodeGraph
 from app.llm.PromptTemplateProvider import PromptTemplateProvider
@@ -23,13 +23,12 @@ from app.streaming import StreamHandler
 
 class LLMChainProvider:
 
-    def __init__(self):
-        self.st_cb = StreamHandler(st.empty())
+    def __init__(self, programming_language: str, framework: str):
         self.code_graph = CodeGraph.load('data/graph/graph.pickle')  # Load pre-built graph
         self.retriever_factory = RetrieverFactory()
-        self.prompt_template_provider = PromptTemplateProvider()
+        self.prompt_template_provider = PromptTemplateProvider(programming_language, framework)
 
-    @st.spinner('Analyzing documents..')
+    @st.spinner('Analyzing documents...')
     def get_llm_preparation_chain_result(
             self,
             llm: ChatOpenAI,
@@ -37,6 +36,7 @@ class LLMChainProvider:
             code: str,
             image_description: str
     ):
+        self.st_cb = StreamHandler(st.empty())
         # Setup memory for contextual conversation
         memory = ConversationBufferMemory()
 
@@ -46,12 +46,11 @@ class LLMChainProvider:
             memory=memory,
             verbose=False,
         )
-        prompt_message = """
-            You are a chatbot tasked with solving software project issues.
-            The project is a website companyhouse.de and it's written in PHP language using Yii2 framework.
-            Prepare message that will be used for semantic search in database for project code, project documentation and framework documentation.
-            Prepare list of information and concepts that are relevant to answering for the problem described below. Take also into consideration directory structure of the project
-            TICKET:\n""" + ticket + "\n\nPROJECT DIRECTORY STRUCTURE:\n" + self._get_project_dir_structure() + code
+        prompt_message = self.prompt_template_provider.get_prompt_preparation(
+            ticket,
+            code,
+            self._get_project_dir_structure()
+        )
 
         if code:
             prompt_message = prompt_message + "\n\nRELATED CODE:\n" + code
@@ -65,8 +64,9 @@ class LLMChainProvider:
 
         return result
 
-    @st.spinner('Analyzing documents..')
+    @st.spinner('Resolving issue..')
     def get_llm_conversational_chain_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str):
+        self.st_cb = StreamHandler(st.empty())
         retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
 
         # Create merger retriever that combines both sources
@@ -100,8 +100,9 @@ class LLMChainProvider:
 
         return result
 
-    @st.spinner('Analyzing documents..')
+    @st.spinner('Resolving issue..')
     def get_llm_agent_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str):
+        self.st_cb = StreamHandler(st.empty())
         retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
         retriever_code_tool = create_retriever_tool(
             retriever_code,
@@ -117,7 +118,15 @@ class LLMChainProvider:
 
         tools = [DuckDuckGoSearchResults(), retriever_code_tool, retriever_docs_tool]
         agent = ChatAgent.from_llm_and_tools(llm, tools, verbose=True)
-        executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, handle_parsing_errors=True)
+        executor = AgentExecutor.from_agent_and_tools(
+            agent=agent,
+            tools=tools,
+            handle_parsing_errors=True,
+            max_execution_time=180,
+            return_source_documents=True,
+            early_stopping_method="generate",
+            verbose=True
+        )
         input = self.prompt_template_provider.get_prompt_template(ticket, code, image_description)
 
         return executor.invoke(
@@ -125,8 +134,8 @@ class LLMChainProvider:
             {"callbacks": [self.st_cb]}
         )
 
-    @st.spinner('Analyzing documents..')
-    def get_multi_agent_system_result(self, llm: ChatOpenAI, ticket: str, code: str):
+    @st.spinner('Resolving issue..')
+    def get_multi_agent_system_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str):
         agent_system = AgentSystem(llm)
         workflow = agent_system.build_system()
 
@@ -140,7 +149,7 @@ class LLMChainProvider:
 
     @st.spinner('Analyzing image..')
     def get_llm_image_describe_result(self, image_bin, ticket: str)->str:
-        client = OpenAI()
+        client = OpenAIModel()
         encoded_string = base64.b64encode(image_bin).decode("utf-8")
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -150,7 +159,7 @@ class LLMChainProvider:
                     "content": [
                         {
                             "type": "text",
-                            "text":  self.prompt_template_provider.get_prompt_template_for_image(ticket.__str__())
+                            "text":  self.prompt_template_provider.get_prompt_template_for_image(ticket)
                         },
                         {
                             "type": "image_url",
@@ -161,7 +170,7 @@ class LLMChainProvider:
             ],
         )
 
-        return response.choices[0]['message']['content']
+        return response.choices[0].message.content
 
     def _process_final_response(self, workflow_output):
         final_response = next(

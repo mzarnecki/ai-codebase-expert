@@ -16,20 +16,22 @@ class RetrieverFactory():
 
         base_retriever = vectordb_code.as_retriever(
             search_type='mmr',
-            search_kwargs={'k': 8, "lambda_mult": 0.5}
+            search_kwargs={'k': 8, "lambda_mult": 0.5},
+            return_source_documents=True,
         )
 
         # Create graph-aware retriever
         graph_retriever = CustomGraphRetriever(
             base_retriever=base_retriever,
-            enhancer=RunnableLambda(self._enhance_documents)  # Wrap with RunnableLambda
+            enhancer=RunnableLambda(self._enhance_documents),  # Wrap with RunnableLambda
         )
 
         # Documentation retriever
         vectordb_docs = VectorStore.get_vector_store(EnumDocsCollection.DOCUMENTATION.value)
         retriever_docs = vectordb_docs.as_retriever(
             search_type='mmr',
-            search_kwargs={'k': 8, "lambda_mult": 0.5}
+            search_kwargs={'k': 8, "lambda_mult": 0.5},
+            return_source_documents=True,
         )
 
         return graph_retriever, retriever_docs

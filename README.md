@@ -3,7 +3,7 @@
 
 Introducing tool to solve development tasks and bug fix tickets in large projects.
 
-<img src="img/ticket-solver-app.png" />
+<img src="img/codebase_expert.gif" />
 
 The tool should search:
 - project code

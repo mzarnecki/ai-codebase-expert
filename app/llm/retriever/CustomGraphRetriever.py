@@ -15,5 +15,6 @@ class CustomGraphRetriever(BaseRetriever):
     def _get_relevant_documents(self, query, *, run_manager):
         # Retrieve documents
         docs = self.base_retriever.get_relevant_documents(query)
+        print(docs)
         # Enhance documents
         return self.enhancer.invoke(docs)

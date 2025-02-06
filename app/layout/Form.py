@@ -1,8 +1,8 @@
 import streamlit as st
 class Form:
     def __init__(self):
-        self.ticketSubject = st.text_input(label="ticket subject")
-        self.ticketDescription = st.text_area(label="ticket description")
+        self.ticketSubject = st.text_input(label="Ticket subject")
+        self.ticketDescription = st.text_area(label="Ticket description")
         self.ticketUrl = st.text_input(label="URL")
         self.ticketUser = st.selectbox(
             "User",
