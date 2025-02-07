@@ -13,6 +13,7 @@ st.write('AI llm capable of integration new features into project and solving is
 
 PROGRAMMING_LANGUAGE = 'PHP' #replace with language of your code base
 FRAMEWORK = 'Yii2' #replace with framework related to your code base
+PROJECT_DESCRIPTION = 'website application' #replace with description of your application
 
 class CodebaseChatbot:
 
@@ -21,7 +22,11 @@ class CodebaseChatbot:
         utils.sync_st_session()
         self.llm = utils.configure_llm()
         self.embedding_model = utils.configure_embedding_model()
-        self.llm_chain_provider = LLMChainProvider(programming_language=PROGRAMMING_LANGUAGE, framework=FRAMEWORK)
+        self.llm_chain_provider = LLMChainProvider(
+            programming_language=PROGRAMMING_LANGUAGE,
+            framework=FRAMEWORK,
+            project_description=PROJECT_DESCRIPTION
+        )
 
     @utils.enable_chat_history
     def main(self):

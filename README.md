@@ -1,5 +1,4 @@
-# AI PROJECT TICKET SOLVER
-[PROJECT IN PROGRESS]
+# AI CODEBASE EXPERT
 
 Introducing tool to solve development tasks and bug-fix tickets in large projects.
 This project is using GPT-4o LLM and langchain agents to search the project code base and documentation to support development work and fixing issues.

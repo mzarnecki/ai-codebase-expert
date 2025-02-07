@@ -2,8 +2,8 @@ from langchain.tools import BaseTool
 from typing import Optional
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManagerForToolRun
 class BaseInformation(BaseTool):
-    name = "Base information about companyhouse.de project"
-    description = "provide initial information about companyhouse.de project"
+    name = "Base information about project"
+    description = "provide initial information about project"
 
     def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         # return framework documentation needed

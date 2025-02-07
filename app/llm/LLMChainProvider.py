@@ -23,10 +23,10 @@ from app.streaming import StreamHandler
 
 class LLMChainProvider:
 
-    def __init__(self, programming_language: str, framework: str):
+    def __init__(self, programming_language: str, framework: str, project_description: str):
         self.code_graph = CodeGraph.load('data/graph/graph.pickle')  # Load pre-built graph
         self.retriever_factory = RetrieverFactory()
-        self.prompt_template_provider = PromptTemplateProvider(programming_language, framework)
+        self.prompt_template_provider = PromptTemplateProvider(programming_language, framework, project_description)
 
     @st.spinner('Analyzing documents...')
     def get_llm_preparation_chain_result(
@@ -136,8 +136,8 @@ class LLMChainProvider:
 
     @st.spinner('Resolving issue..')
     def get_multi_agent_system_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str):
-        agent_system = AgentSystem(llm)
-        workflow = agent_system.build_system()
+        agent_system = AgentSystem(llm, self.prompt_template_provider)
+        workflow = agent_system.build_system(ticket, self._get_project_dir_structure())
 
         result = workflow.invoke({
             "ticket": ticket,
