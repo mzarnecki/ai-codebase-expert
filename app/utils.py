@@ -61,8 +61,12 @@ def sync_st_session():
 
 
 def styleLayout():
+    st.set_page_config(page_title="CODEBASE EXPERT", page_icon="🤖", layout='wide')
     st.markdown("""
     <style>
-
+        div[data-testid="column"]:nth-child(3) {
+            border: 2px solid gray;
+            padding: 10px;
+        }
     </style>
     """, unsafe_allow_html=True)

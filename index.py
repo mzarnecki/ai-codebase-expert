@@ -7,10 +7,9 @@ import streamlit as st
 from dotenv import load_dotenv, find_dotenv
 from jira import JIRA
 
-st.set_page_config(page_title="CODEBASE EXPERT", page_icon="🤖")
 utils.styleLayout()
 st.header('CODEBASE EXPERT')
-st.write('AI llm capable of integration new features into project and solving issues based on ticket description.')
+st.write('AI agents/LLM-based tool capable of integration new features into project and solving issues based on ticket description.')
 
 PROGRAMMING_LANGUAGE = 'PHP' #replace with language of your code base
 FRAMEWORK = 'Yii2' #replace with framework related to your code base
