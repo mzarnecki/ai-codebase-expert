@@ -32,6 +32,12 @@ Tool works in 4 stages:
 5. Set consts with programming language and framework name on [index.py](index.py):14 
 6. Start streamlit app with `streamlit run index.py` - it will open application in browser where you can provide details of issue that needs to be solved.
 
+## 🤖 Processing options
+
+![architecture1.png](img/architecture1.png)
+![architecture2.png](img/architecture2.png)
+![architecture3.png](img/architecture3.png)
+
 ## ✔️ Run unit tests
 To run unit tests use command below:
 `python -m unittest discover test "*Test.py"`
