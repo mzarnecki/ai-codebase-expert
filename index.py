@@ -5,6 +5,7 @@ from app.llm.LLMChainProvider import LLMChainProvider
 from app.model.Ticket import Ticket
 import streamlit as st
 from dotenv import load_dotenv, find_dotenv
+from jira import JIRA
 
 st.set_page_config(page_title="CODEBASE EXPERT", page_icon="🤖")
 utils.styleLayout()
@@ -34,17 +35,39 @@ class CodebaseChatbot:
 
         if form.submitted:
             ticket = Ticket(form)
-            utils.display_msg("Ticket summary:\n\n" + ticket.__str__(), 'user')
+            self._process_ticket(ticket, form)
 
-            image_description = self._describe_attached_image(ticket)
-            if image_description:
-                utils.display_msg("Image description:\n" + image_description, "assistant")
+        if form.submit_jira:
+            ticket = Ticket(form)
+            self._get_jira_task(ticket, form.jira_task)
+            self._process_ticket(ticket, form)
 
-            rag_output = self._get_concepts_with_RAG_for_the_task(ticket, image_description)
-            utils.display_msg("RAG output:\n" + rag_output, "assistant")
 
-            result = self._provide_solution_with_selected_LLM_chain(form, ticket, rag_output, image_description)
-            self._display_response_and_source_documents(result, ticket, rag_output)
+    def _get_jira_task(self, ticket: Ticket, task_no: str):
+        # domain name link. yourdomainname.atlassian.net
+        jiraOptions = {'server': os.environ.get('JIRA_SERVER')}
+        jira = JIRA(options=jiraOptions, basic_auth=(os.environ.get('JIRA_USER'), os.environ.get('JIRA_PASS')))
+
+        # Search all issues mentioned against a project name.
+        for singleIssue in jira.search_issues(jql_str=f"project = {os.environ.get('JIRA_PROJECT')} AND issue={task_no}"):
+            print('{}: {}:{}'.format(singleIssue.key, singleIssue.fields.summary,
+                                     singleIssue.fields.reporter.displayName))
+            ticket.subject = singleIssue.fields.summary
+            ticket.description = singleIssue.fields.description
+            return
+
+    def _process_ticket(self, ticket: Ticket, form: Form):
+        utils.display_msg("Ticket summary:\n\n" + ticket.__str__(), 'user')
+
+        image_description = self._describe_attached_image(ticket)
+        if image_description:
+            utils.display_msg("Image description:\n" + image_description, "assistant")
+
+        rag_output = self._get_concepts_with_RAG_for_the_task(ticket, image_description)
+        utils.display_msg("RAG output:\n" + rag_output, "assistant")
+
+        result = self._provide_solution_with_selected_LLM_chain(form, ticket, rag_output, image_description)
+        self._display_response_and_source_documents(result, ticket, rag_output)
 
     def _describe_attached_image(self, ticket: Ticket) -> str:
         if ticket.image:
