@@ -31,6 +31,7 @@ Tool works in 4 stages:
 4. Adjust directories names in [initVectorDB.ipynb](notebook/initVectorDB.ipynb) and run this notebook to import project resources into vector db.
 5. Set consts with programming language and framework name on [index.py](index.py):14 
 6. Start streamlit app with `streamlit run index.py` - it will open application in browser where you can provide details of issue that needs to be solved.
+7. (optional) add JIRA credentials in .env for IRA integration, see [.env-sample](.env-sample)
 
 ## 🤖 Processing options
 
