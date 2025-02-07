@@ -11,3 +11,4 @@ fastembed==0.1.3
 docarray==0.40.0
 validators==0.33.0
 duckduckgo-search==6.3.7
+jira==3.8.0

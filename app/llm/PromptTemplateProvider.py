@@ -7,7 +7,11 @@ class PromptTemplateProvider(object):
         self.project_description = project_description
 
     def get_prompt_template(self, ticket: str, code: str, image_description: str) -> SystemMessagePromptTemplate:
-        text = f"""You are a Senior Software Engineer with expertise in code analysis.
+        text = self.get_prompt_template_message(ticket, code, image_description)
+        return SystemMessagePromptTemplate.from_template(text)
+
+    def get_prompt_template_message(self, ticket: str, code: str, image_description: str) -> str:
+            text = f"""You are a Senior Software Engineer with expertise in code analysis.
             You have a strong ability to troubleshoot and resolve issues based on the information provided.
             If you are uncertain about the answer, simply state that you do not know.
             
@@ -37,15 +41,14 @@ class PromptTemplateProvider(object):
             Write working code solution and add explanation and additional instructions related to using this code if needed.\n\n 
             {ticket}"""
 
-        if code:
-            text += "\n\nRelated code:" + code
+            if code:
+                text += "\n\nRelated code:" + code
 
-        if image_description:
-            text += "\n\nRelated image description:" + image_description
+            if image_description:
+                text += "\n\nRelated image description:" + image_description
 
-        text += "\n\nFor solution use information from project code and documentation below.\n {context}"
-
-        return SystemMessagePromptTemplate.from_template(text)
+            text += "\n\nFor solution use information from project code and documentation below.\n {context}"
+            return text
 
     def get_prompt_RAG(self, ticket: str, proj_dir_structure: str) -> str:
         return f""" You are a chatbot tasked with solving software project issues.

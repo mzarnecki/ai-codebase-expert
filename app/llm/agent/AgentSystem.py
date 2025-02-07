@@ -2,6 +2,8 @@ from typing import TypedDict, List
 from langchain_core.messages import BaseMessage
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import RunnableLambda
+from langgraph.graph.state import CompiledStateGraph
+
 from app.llm.PromptTemplateProvider import PromptTemplateProvider
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -11,11 +13,13 @@ class AgentState(TypedDict):
     ticket: str
     code: str
     messages: List[BaseMessage]
+    iteration_count: int  # Track iterations
+
+MAX_ITERATIONS = 5  # Limit the loop to avoid infinite execution
 
 class AgentSystem:
     def __init__(self, llm, prompt_template_provider: PromptTemplateProvider):
         self.llm = llm
-        # Initialize StateGraph with the TypedDict schema
         self.workflow = StateGraph(AgentState)
         self.prompt_template_provider = prompt_template_provider
 
@@ -27,19 +31,26 @@ class AgentSystem:
             ])
             chain = prompt | self.llm
             response = chain.invoke({})
-            return {"messages": state["messages"] + [response]}
+
+            new_state = {
+                "messages": state["messages"] + [response],
+                "ticket": state["ticket"],
+                "code": state["code"],
+                "iteration_count": state["iteration_count"] + 1  # Increment iteration count
+            }
+            return new_state
+
         return RunnableLambda(agent_node, name=role)
 
-    def build_system(self, ticket, proj_dir_structure):
-        # Define agents (same as before)
-        analyzer = self._create_agent(
-            "Analyzer",
-            self.prompt_template_provider.get_prompt_RAG(ticket, proj_dir_structure)
-        )
+    def build_system(self, ticket: str, proj_dir_structure: str, code: str, image_description: str) -> CompiledStateGraph:
+        # analyzer = self._create_agent(
+        #     "Analyzer",
+        #     self.prompt_template_provider.get_prompt_RAG(ticket, proj_dir_structure)
+        # )
 
         solver = self._create_agent(
             "Solver",
-            self.prompt_template_provider.get_prompt_template(ticket, '', '').prompt #TODO FILL missing
+            self.prompt_template_provider.get_prompt_template_message(ticket, code, image_description)
         )
 
         critic = self._create_agent(
@@ -47,17 +58,24 @@ class AgentSystem:
             """You are a senior code reviewer. Evaluate the proposed solution..."""
         )
 
-        # Add nodes and edges (same structure as before)
-        self.workflow.add_node("Analyzer", analyzer)
+        # self.workflow.add_node("Analyzer", analyzer)
         self.workflow.add_node("Solver", solver)
         self.workflow.add_node("Critic", critic)
 
-        self.workflow.add_edge("Analyzer", "Solver")
+        # self.workflow.add_edge("Analyzer", "Solver")
         self.workflow.add_edge("Solver", "Critic")
 
         def decide_next_step(state: AgentState):
             last_msg = state["messages"][-1].content
-            return END if "APPROVED" in last_msg else "Solver"
+
+            # **Termination Conditions**
+            if "APPROVED" in last_msg:
+                return END  # End workflow if solution is approved
+
+            if state["iteration_count"] >= MAX_ITERATIONS:
+                return END  # Stop after max iterations
+
+            return "Solver"  # Otherwise, continue iterating
 
         self.workflow.add_conditional_edges(
             "Critic",
@@ -65,5 +83,5 @@ class AgentSystem:
             {"Solver": "Solver", END: END}
         )
 
-        self.workflow.set_entry_point("Analyzer")
-        return self.workflow.compile()
+        self.workflow.set_entry_point("Solver")
+        return self.workflow.compile(debug=True)
