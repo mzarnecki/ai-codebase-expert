@@ -34,9 +34,11 @@ Tool workflow cycle consist of stages:
 7. (optional) add JIRA credentials in .env for IRA integration, see [.env-sample](.env-sample)
 
 ## 🤖 Processing options
-
+1. Single request to LLM for solution (+ 1 request to get related concepts)
 ![architecture1.png](img/architecture1.png)
+2. Multiple requests to LLM by Agent with retriever tools
 ![architecture2.png](img/architecture2.png)
+3. Multiple requests to LLM by Multi-agent system with dedicated roles and access to retriever tools
 ![architecture3.png](img/architecture3.png)
 
 ## ✔️ Run unit tests
