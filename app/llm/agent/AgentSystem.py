@@ -1,5 +1,3 @@
-from typing import TypedDict, List
-from langchain_core.messages import BaseMessage
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph.state import CompiledStateGraph
@@ -8,12 +6,7 @@ from app.llm.PromptTemplateProvider import PromptTemplateProvider
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 
-# Define the state schema using TypedDict
-class AgentState(TypedDict):
-    ticket: str
-    code: str
-    messages: List[BaseMessage]
-    iteration_count: int  # Track iterations
+from app.llm.agent.AgentState import AgentState
 
 MAX_ITERATIONS = 5  # Limit the loop to avoid infinite execution
 
