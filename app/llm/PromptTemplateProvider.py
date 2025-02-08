@@ -38,7 +38,8 @@ class PromptTemplateProvider(object):
             
             Using these guidelines, create a solution for the ticket described below.
             You can also be provided with a proposed solution for the code to evaluate.
-            Write working code solution and add explanation and additional instructions related to using this code if needed.\n\n 
+            Write working code solution and add explanation and additional instructions related to using this code if needed.
+            If you this this solution is incomplete add additionally exact text: MISSING_INFORMATION to the response.\n\n 
             {ticket}"""
 
             if code:
@@ -50,19 +51,13 @@ class PromptTemplateProvider(object):
             text += "\n\nFor solution use information from project code and documentation below.\n {context}"
             return text
 
-    def get_prompt_RAG(self, ticket: str, proj_dir_structure: str) -> str:
+    def get_prompt_RAG(self, ticket: str, code: str, project_dir_structure: str) -> str:
         return f""" You are a chatbot tasked with solving software project issues.
             You will be also supplied with code solution proposal.
             The project is {self.project_description} and it's written in {self.programming_language} language using {self.framework} framework.
             Prepare message that will be used for semantic search in database for project code and project documentation.
             This message should contain some code if possible to match also files with code in vector db.
             Prepare message based on issue description below. Say which files should be checked.
-            {ticket}\n\n{proj_dir_structure}"""
-
-    def get_prompt_preparation(self, ticket: str, code: str, project_dir_structure: str) -> str:
-        return f"""You are a chatbot tasked with solving software project issues.
-            The project is {self.project_description} and it's written in {self.programming_language} language using {self.framework} framework.
-            Prepare message that will be used for semantic search in database for project code, project documentation and framework documentation.
             Prepare list of information and concepts that are relevant to answering for the problem described below. Take also into consideration directory structure of the project
             TICKET:\n{ticket}\n\nPROJECT DIRECTORY STRUCTURE:\n{project_dir_structure}{code}"""
 
@@ -71,3 +66,7 @@ class PromptTemplateProvider(object):
             This image is attached to Jira ticket related to reporting programming Issue.
             Usually it contains some issue details, website screenshot when problem appeared or some other related things that can help solve the issue.
             Prepare description of image content that can help solve the issue. The reported problem in task was\n:""" + ticket
+
+    def get_critic_prompt_message(self) -> str:
+        return """You are a senior code reviewer. Evaluate the proposed solution.
+             Write exact and only word APPROVED if solution is acceptable and complete."""
