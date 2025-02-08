@@ -13,7 +13,7 @@ The tool should search:
 and based on retrieved information solve project issues
 
 ## 📱 Application flow
-Tool works in 4 stages:
+Tool workflow cycle consist of stages:
 1. Prepare important concepts and semantic search message based on provided ticket details.
 2. Recognize content from attached image (optional).
 3. Search documentation and codebase using retrieval augmented generation technic and documents enhancement with code dependencies graph.
