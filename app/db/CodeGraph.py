@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import networkx as nx
@@ -8,6 +9,8 @@ class CodeGraph:
 
     @classmethod
     def load(cls, path):
+        if not os.path.isfile(path):
+            return None
         with open(path, 'rb') as f:
             instance = pickle.load(f)
         return instance
@@ -21,7 +24,7 @@ class CodeGraph:
         for dep in metadata.get('dependencies', []):
             self.graph.add_edge(metadata['file_path'], dep)
 
-    def get_relations(self, file_path):
+    def get_relations(self, file_path)->dict:
         node = self.graph.nodes.get(file_path, {})
         methods = node.get('methods', [])
         if not methods:
