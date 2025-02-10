@@ -25,7 +25,6 @@ from app.streaming import StreamHandler
 class LLMChainProvider:
 
     def __init__(self, programming_language: str, framework: str, project_description: str):
-        # self.code_graph = CodeGraph.load('data/graph/graph.pickle')  # Load pre-built graph TODO use graph to load whole modules
         self.retriever_factory = RetrieverFactory()
         self.prompt_template_provider = PromptTemplateProvider(programming_language, framework, project_description)
 

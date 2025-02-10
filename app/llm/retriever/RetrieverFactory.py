@@ -40,7 +40,14 @@ class RetrieverFactory():
         enhanced = []
         for doc in docs:
             metadata = doc.metadata
-            relations = self.code_graph.get_relations(metadata['file_path'])
+            if self.code_graph is None:
+                relations = {
+                    'parent': None,
+                    'dependencies': [],
+                    'all_related': []
+                }
+            else:
+                relations = self.code_graph.get_relations(metadata['file_path'])
 
             # Create enhanced metadata
             enhanced_metadata = {
