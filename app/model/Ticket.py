@@ -13,6 +13,7 @@ class Ticket:
         self.user = layout.ticket_user
         self.code = layout.ticket_code
         self.code = self.code.replace("{", "&#123;").replace("}", "&#125;")
+        self.additional_instruction = layout.additional_instruction
         self.image = None
 
         if layout.ticket_image  is not None:
@@ -21,11 +22,15 @@ class Ticket:
             self.image = TicketImage(bytes_data, layout.ticket_image.name)
 
     def __str__(self):
-        return (f'''subject: {self.subject}\n
-description: {self.description}\n
-url: {self.url}\n
-device: {self.device}\n
-user: {self.user}\n
-''')
+        message = f"subject: {self.subject}\n description: {self.description}\n\n"
+        if self.user:
+            message += f"User: {self.user}\n\n"
+        if self.url:
+            message += f"URL: {self.url}\n\n"
+        if self.device:
+            message += f"Device: {self.device}\n\n"
+        if self.additional_instruction:
+            message += f"Additional instructions to be handled by LLM: {self.additional_instruction}\n"
+        return message
 
 

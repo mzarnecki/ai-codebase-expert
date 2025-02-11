@@ -23,6 +23,7 @@ class Form:
             self.ticket_image =  st.file_uploader("Image")
             self.ticket_code = st.text_area(label="Related code samples")
             self.use_agent = st.radio("Use agent", options=("single-request", "agent", "multi-agent"))
+            self.additional_instruction = st.text_area(label="Additional instructions", placeholder="Add additional instructions like ask for solution review, generate test scenarios, etc.")
             self.submitted = st.button('Submit')
 
         with col3:

@@ -24,7 +24,7 @@ def enable_chat_history(func):
 
         # to show chat history on ui
         if "messages" not in st.session_state:
-            st.session_state["messages"] = [{"role": "assistant", "content": "Provide ticket details"}]
+            st.session_state["messages"] = []
         for msg in st.session_state["messages"]:
             st.chat_message(msg["role"]).write(msg["content"])
 
@@ -68,5 +68,128 @@ def styleLayout():
             border: 2px solid gray;
             padding: 10px;
         }
+    /* General styles */
+    body {
+        background-color: #1e1e2e;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    p, h2, h3 {
+        color: #fff;
+    }
+    
+    img {
+      display: inline-block;
+      margin-left: 20%;
+      margin-right: auto;
+      width: 80%;
+    }
+    
+    /* Styling main container */
+    .stApp {
+        background-color: #1e1e2e;
+        color: #ffffff;
+    }
+    
+    /* Sidebar */
+    .stSidebar {
+        background-color: #282a36;
+        color: #ffffff;
+    }
+    
+    /* Header */
+    .stHeader {
+        background-color: #1e1e2e;
+        border-bottom: 2px solid #44475a;
+        padding: 10px;
+        color: #ffffff;
+    }
+    
+    /* Buttons */
+    button, .stButton > button {
+        background-color: #000 !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        font-size: 16px !important;
+        padding: 10px 20px !important;
+        transition: 0.3s;
+    }
+    button:hover, .stButton > button:hover {
+        background-color: #6a0dad !important;
+        color: #ffffff !important;
+    }
+    
+    /* Input fields */
+    .stTextInput > label, .stTextArea > label, .stSelectbox > label, .stRadio > label {
+        color: #ffffff !important;
+        font-weight: bold !important;
+    }
+    
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea, .stSelectbox > div > div > select {
+        background-color: #44475a !important;
+        color: #ffffff !important;
+        border-radius: 6px !important;
+        border: none !important;
+    }
+    
+    /* Fix for placeholder text visibility */
+    .stTextInput > div > div > input::placeholder, .stTextArea > div > div > textarea::placeholder, .stSelectbox > div > div > select::placeholder {
+        color: #b0b0b0 !important;
+    }
+    
+    /* File uploader */
+    .stFileUploader > div {
+        background-color: #44475a !important;
+        color: #ffffff !important;
+        border: 2px dashed #ff79c6 !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Cards and sections */
+    .stMarkdown, .stDataFrame, .stTextArea, .stTextInput, .stSelectbox, .stButton, .stRadio, .stFileUploader {
+        background-color: #282a36 !important;
+        border-radius: 10px !important;
+        padding: 10px !important;
+        margin-bottom: 15px !important;
+        color: #ffffff !important;
+    }
+    
+    /* Jira Task Box */
+    .stTextInput .jira-task {
+        background-color: #44475a !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        font-weight: bold !important;
+        color: #ffffff !important;
+    }
+    
+    /* Highlight code block */
+    .stCodeBlock {
+        background-color: #282a36 !important;
+        border-radius: 6px !important;
+        padding: 10px !important;
+        color: #ffffff !important;
+    }
+    
+    /* Use agent selection */
+    .stRadio > div {
+        background-color: #282a36 !important;
+        border-radius: 6px !important;
+        padding: 10px !important;
+        color: #ffffff !important;
+    }
+    
+    /* Column layout adjustments */
+    .css-1y4p8pa {
+        display: flex;
+        gap: 20px;
+    }
+    
+    /* Hover Effects */
+    .stButton:hover, .stSelectbox:hover, .stTextInput:hover, .stTextArea:hover {
+        box-shadow: 0px 0px 10px #ff79c6 !important;
+    }
+
     </style>
     """, unsafe_allow_html=True)

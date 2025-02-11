@@ -8,8 +8,10 @@ from dotenv import load_dotenv, find_dotenv
 from jira import JIRA
 
 utils.styleLayout()
-st.header('CODEBASE EXPERT')
-st.write('AI agents/LLM-based tool capable of integration new features into project and solving issues based on ticket description.')
+st.image('img/banner_top_wide.webp')
+st.write('AI CODEBASE EXPERT tool can help you adding new features into project and solving problems based on ticket description '
+    '\n\nApplication uses AI agents and large language model to get answers based on provided tickets and search performed on codebase and documentation.'
+    '\n\n Provide task details below.')
 
 PROGRAMMING_LANGUAGE = 'PHP' #replace with language of your code base
 FRAMEWORK = 'Yii2' #replace with framework related to your code base

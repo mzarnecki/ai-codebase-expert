@@ -1,3 +1,4 @@
+![bancer_top.webp](img/banner_top.webp)
 # AI CODEBASE EXPERT
 
 Introducing tool to solve development tasks and bug-fix tickets in large projects.
