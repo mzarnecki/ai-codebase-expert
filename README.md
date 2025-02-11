@@ -21,6 +21,8 @@ Tool workflow cycle consist of stages:
 4. Combine prepared concepts, image interpretation and found code samples. Send everything to LLM and get the solution.
 5. Repeat points 3-4 until proper solution is found and decide on support actions like searching for more code samples.
 
+![application_layout.png](img/application_layout.png)
+
 ## 📋 Prerequisites
 
 - Docker and Docker Compose ([Installation Guide](https://docs.docker.com/compose/install/))
