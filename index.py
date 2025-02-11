@@ -8,7 +8,7 @@ from dotenv import load_dotenv, find_dotenv
 from jira import JIRA
 
 utils.styleLayout()
-st.image('img/banner_top_wide.webp')
+st.image(os.getcwd() + '/img/banner_top_wide.webp')
 st.write('AI CODEBASE EXPERT tool can help you adding new features into project and solving problems based on ticket description '
     '\n\nApplication uses AI agents and large language model to get answers based on provided tickets and search performed on codebase and documentation.'
     '\n\n Provide task details below.')
