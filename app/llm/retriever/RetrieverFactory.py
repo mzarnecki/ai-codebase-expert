@@ -1,5 +1,6 @@
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
+from networkx.exception import NetworkXError
 
 from app.db.CodeGraph import CodeGraph
 from app.db.EnumDocsCollection import EnumDocsCollection
@@ -38,16 +39,20 @@ class RetrieverFactory():
 
     def _enhance_documents(self, docs):
         enhanced = []
+        emptyRelations = {
+            'parent': None,
+            'dependencies': [],
+            'all_related': []
+        }
         for doc in docs:
             metadata = doc.metadata
             if self.code_graph is None:
-                relations = {
-                    'parent': None,
-                    'dependencies': [],
-                    'all_related': []
-                }
+                relations = emptyRelations.copy()
             else:
-                relations = self.code_graph.get_relations(metadata['file_path'])
+                try:
+                    relations = self.code_graph.get_relations(metadata['file_path'])
+                except NetworkXError:
+                    relations = emptyRelations.copy()
 
             # Create enhanced metadata
             enhanced_metadata = {
