@@ -7,10 +7,10 @@ class PromptTemplateProvider(object):
         self.project_description = project_description
 
     def get_prompt_template(self, ticket: str, code: str, image_description: str) -> SystemMessagePromptTemplate:
-        text = self.get_prompt_template_message(ticket, code, image_description)
+        text = self.get_solver_prompt_template_message(ticket, code, image_description)
         return SystemMessagePromptTemplate.from_template(text)
 
-    def get_prompt_template_message(self, ticket: str, code: str, image_description: str) -> str:
+    def get_solver_prompt_template_message(self, ticket: str, code: str, image_description: str) -> str:
             text = f"""You are a Senior Software Engineer with expertise in code analysis.
             You have a strong ability to troubleshoot and resolve issues based on the information provided.
             If you are uncertain about the answer, simply state that you do not know.
@@ -39,7 +39,7 @@ class PromptTemplateProvider(object):
             Using these guidelines, create a solution for the ticket described below.
             You can also be provided with a proposed solution for the code to evaluate.
             Write working code solution and add explanation and additional instructions related to using this code if needed.
-            If you this this solution is incomplete add additionally exact text: MISSING_INFORMATION to the response.\n\n 
+            If the code provided from codebase is not relevant or incomplete add additionally exact text: MISSING_INFORMATION to the response.\n\n 
             {ticket}"""
 
             if code:
@@ -59,7 +59,7 @@ class PromptTemplateProvider(object):
             This message should contain some code if possible to match also files with code in vector db.
             Prepare message based on issue description below. Say which files should be checked.
             Prepare list of information and concepts that are relevant to answering for the problem described below. Take also into consideration directory structure of the project
-            TICKET:\n{ticket}\n\nPROJECT DIRECTORY STRUCTURE:\n{project_dir_structure}{code}"""
+            TICKET:\n{ticket}\n\nPROJECT DIRECTORY STRUCTURE:\n{project_dir_structure}\n\nPROVIDED CODE:{code}"""
 
     def get_prompt_template_for_image(self, ticket: str) -> str:
         return """
@@ -70,3 +70,23 @@ class PromptTemplateProvider(object):
     def get_critic_prompt_message(self) -> str:
         return """You are a senior code reviewer. Evaluate the proposed solution.
              Write exact and only word APPROVED if solution is acceptable and complete."""
+
+    def get_researcher_prompt_message(self, ticket: str, code: str, project_dir_structure: str) -> str:
+        return f""""You are researcher agent with access to the codebase. Your goal is to find all code files related to provided ticket/task.
+            Find all files that are needed to fully analyze and solve the issue.
+            The project is {self.project_description}.
+            It is built using {self.programming_language} and the {self.framework} framework.
+            
+            When analyzing the provided code context, carefully evaluate:
+                The structure and connections between different code components
+                Key implementation details and coding patterns used
+                The file paths and locations of each code snippet
+                The type of code element (e.g., class, method, function, etc.)
+                The name and purpose of each code segment
+            TICKET:\n{ticket}\n\nPROJECT DIRECTORY STRUCTURE:\n{project_dir_structure}\n\nPROVIDED CODE:\n{code}"""
+
+    def get_research_critic_prompt_message(self, ticket: str, code: str, project_dir_structure: str) -> str:
+        return f"""You are a tech lead. Evaluate the provided information.
+            This information will be forwarded to developer agent and need to contain all related code to the issue.
+            If there is missing information write exact phrase: MISSING_CODE
+            TICKET:\n{ticket}\n\nPROJECT DIRECTORY STRUCTURE:\n{project_dir_structure}\n\nPROVIDED CODE:\n{code}"""

@@ -5,14 +5,12 @@ from langchain_core.tools import create_retriever_tool
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph.state import CompiledStateGraph
-
 from app.llm.PromptTemplateProvider import PromptTemplateProvider
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
-
 from app.llm.agent.AgentState import AgentState
 
-MAX_ITERATIONS = 5  # Limit the loop to avoid infinite execution
+MAX_ITERATIONS = 15  # Limit the loop to avoid infinite execution
 
 class AgentSystem:
     def __init__(self, llm, prompt_template_provider: PromptTemplateProvider, retriever_factory):
@@ -21,7 +19,7 @@ class AgentSystem:
         self.prompt_template_provider = prompt_template_provider
         self.retriever_factory = retriever_factory
 
-        # Initialize tools for Analyzer
+        # Initialize tools for Researcher
         retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
         self.retriever_code_tool = create_retriever_tool(
             retriever_code, name="search_project_code", description="Search project code files."
@@ -36,13 +34,13 @@ class AgentSystem:
         def agent_node(state: AgentState):
             prompt = ChatPromptTemplate.from_messages([
                 SystemMessage(content=template),
-                HumanMessage(content=state["ticket"] + "\n\nRelated Code:\n" + state["code"])
+                HumanMessage(content=state["ticket"])
             ])
             chain = prompt | self.llm
             response = chain.invoke({})
 
             new_state = {
-                "messages": (state["messages"] + [response])[-5:],  # Keep only last 5 messages
+                "messages": (state["messages"] + [response])[-15:],  # Keep only last 5 messages
                 "ticket": state["ticket"],
                 "code": state["code"],
                 "iteration_count": state["iteration_count"] + 1  # Increment iteration count
@@ -84,51 +82,65 @@ class AgentSystem:
         return RunnableLambda(agent_node, name=role)
 
     def build_system(self, ticket: str, proj_dir_structure: str, code: str, image_description: str) -> CompiledStateGraph:
-        """Builds the multi-agent system."""
+        """Builds the multi-agent system and enables graph visualization."""
+
+        researcher = self._create_agent_with_tools(
+            "Researcher",
+            self.prompt_template_provider.get_researcher_prompt_message(ticket, code, proj_dir_structure)
+        )
+
+        research_critic = self._create_agent(
+            "ResearchCritic",
+            self.prompt_template_provider.get_research_critic_prompt_message(ticket, code, proj_dir_structure)
+        )
 
         solver = self._create_agent(
             "Solver",
-            self.prompt_template_provider.get_prompt_template_message(ticket, code, image_description)
+            self.prompt_template_provider.get_solver_prompt_template_message(ticket, code, image_description)
         )
 
-        analyzer = self._create_agent_with_tools(
-            "Analyzer",
-            self.prompt_template_provider.get_prompt_template_message(ticket, code, proj_dir_structure)
-        )
-
-        critic = self._create_agent(
+        solution_critic = self._create_agent(
             "Critic",
             self.prompt_template_provider.get_critic_prompt_message()
         )
 
+        self.workflow.add_node("Researcher", researcher)
+        self.workflow.add_node("ResearchCritic", research_critic)
         self.workflow.add_node("Solver", solver)
-        self.workflow.add_node("Analyzer", analyzer)
-        self.workflow.add_node("Critic", critic)
+        self.workflow.add_node("Critic", solution_critic)
+
+        def research_critic_decision(state: AgentState):
+            last_msg = state["messages"][-1].content
+            if ("MISSING_CODE" in last_msg) and state["iteration_count"] <= MAX_ITERATIONS:
+                return "Researcher"
+            else:
+                return "Solver"
+
+        self.workflow.add_conditional_edges(
+            "ResearchCritic",
+            research_critic_decision,
+            {"Researcher": "Researcher", "Solver": "Solver"}
+        )
+
+        self.workflow.add_edge("Researcher", "ResearchCritic")
 
         def solver_decision(state: AgentState):
             last_msg = state["messages"][-1].content
-
-            if "MISSING_INFORMATION" in last_msg:  # If the response suggests missing details
-                return "Analyzer"
-            return "Critic"
+            if ("MISSING_CODE" in last_msg) and state["iteration_count"] <= MAX_ITERATIONS:
+                return "Researcher"
+            else:
+                return "Critic"
 
         self.workflow.add_conditional_edges(
             "Solver",
             solver_decision,
-            {"Analyzer": "Analyzer", "Critic": "Critic"}
+            {"Researcher": "Researcher", "Critic": "Critic"}
         )
-
-        self.workflow.add_edge("Analyzer", "Solver")
 
         def decide_next_step(state: AgentState):
             last_msg = state["messages"][-1].content
-
-            if "APPROVED" in last_msg:
-                return END  # End workflow if solution is approved
-
-            if state["iteration_count"] >= MAX_ITERATIONS:
-                return END  # Stop after max iterations
-
+            if "APPROVED" in last_msg or state["iteration_count"] >= MAX_ITERATIONS:
+                return END
             return "Solver"
 
         self.workflow.add_conditional_edges(
@@ -137,5 +149,11 @@ class AgentSystem:
             {"Solver": "Solver", END: END}
         )
 
-        self.workflow.set_entry_point("Solver")
-        return self.workflow.compile(debug=True)
+        self.workflow.set_entry_point("Researcher")
+
+        # Compile the graph
+        compiled_graph = self.workflow.compile(debug=True)
+
+        compiled_graph.get_graph().draw_mermaid_png(output_file_path='graph_visualization.png')
+
+        return compiled_graph

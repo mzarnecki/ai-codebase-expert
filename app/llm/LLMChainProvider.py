@@ -1,4 +1,5 @@
 import base64
+import contextlib
 
 import streamlit as st
 from langchain.agents.chat.base import ChatAgent
@@ -13,11 +14,11 @@ from langchain_core.tools import create_retriever_tool
 from openai import OpenAI as OpenAIModel
 
 from app import utils
-from app.db.CodeGraph import CodeGraph
 from app.llm.PromptTemplateProvider import PromptTemplateProvider
 
 from langchain.agents import AgentExecutor
 
+from app.llm.StreamToStreamlit import StreamToStreamlit
 from app.llm.agent.AgentSystem import AgentSystem
 from app.llm.retriever.RetrieverFactory import RetrieverFactory
 from app.streaming import StreamHandler
@@ -101,7 +102,7 @@ class LLMChainProvider:
         return result
 
     @st.spinner('Resolving issue..')
-    def get_llm_agent_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str):
+    def get_llm_agent_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str, debug_output_container): # Accept debug_output_container
         self.st_cb = StreamHandler(st.empty())
         retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
         retriever_code_tool = create_retriever_tool(
@@ -129,17 +130,26 @@ class LLMChainProvider:
         )
         input = self.prompt_template_provider.get_prompt_template(ticket, code, image_description)
 
-        return executor.invoke(
-            {"input": input, "closure": "", "main": ""},
-            {"callbacks": [self.st_cb]}
-        )
+        # Redirect stdout to Streamlit container
+        streamlit_stdout = StreamToStreamlit(debug_output_container)
+        with contextlib.redirect_stdout(streamlit_stdout): # Redirect output here
+            result = executor.invoke(
+                {"input": input, "closure": "", "main": ""},
+                {"callbacks": [self.st_cb]}
+            )
+
+        return result
+
 
     @st.spinner('Resolving issue..')
-    def get_multi_agent_system_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str):
+    def get_multi_agent_system_result(self, llm: ChatOpenAI, ticket: str, code: str, image_description: str, debug_output_container): # Accept debug_output_container
 
         agent_system = AgentSystem(llm, self.prompt_template_provider, self.retriever_factory)
         workflow = agent_system.build_system(ticket, self._get_project_dir_structure(), code, image_description)
 
+        # Redirect stdout to Streamlit container
+        # streamlit_stdout = StreamToStreamlit(debug_output_container)
+        # with contextlib.redirect_stdout(streamlit_stdout): # Redirect output here
         result = workflow.invoke({
             "ticket": ticket,
             "code": code,

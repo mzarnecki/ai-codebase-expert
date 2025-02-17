@@ -7,8 +7,7 @@ from app.db.EnumDocsCollection import EnumDocsCollection
 from app.db.VectorStore import VectorStore
 from app.llm.retriever.CustomGraphRetriever import CustomGraphRetriever
 
-class RetrieverFactory():
-
+class RetrieverFactory:
     def __init__(self):
         self.code_graph = CodeGraph.load('data/graph/graph.pickle')  # Load pre-built graph
 
@@ -16,8 +15,8 @@ class RetrieverFactory():
         vectordb_code = VectorStore.get_vector_store(EnumDocsCollection.CODE.value)
 
         base_retriever = vectordb_code.as_retriever(
-            search_type='mmr',
-            search_kwargs={'k': 8, "lambda_mult": 0.5},
+            search_type='similarity',
+            search_kwargs={'k': 8},
             return_source_documents=True,
         )
 
