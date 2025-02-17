@@ -154,4 +154,6 @@ class AgentSystem:
         # Compile the graph
         compiled_graph = self.workflow.compile(debug=True)
 
+        compiled_graph.get_graph().draw_mermaid_png(output_file_path='graph_visualization.png')
+
         return compiled_graph
