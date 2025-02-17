@@ -5,14 +5,12 @@ from langchain_core.tools import create_retriever_tool
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph.state import CompiledStateGraph
-
 from app.llm.PromptTemplateProvider import PromptTemplateProvider
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
-
 from app.llm.agent.AgentState import AgentState
 
-MAX_ITERATIONS = 5  # Limit the loop to avoid infinite execution
+MAX_ITERATIONS = 15  # Limit the loop to avoid infinite execution
 
 class AgentSystem:
     def __init__(self, llm, prompt_template_provider: PromptTemplateProvider, retriever_factory):
@@ -84,7 +82,7 @@ class AgentSystem:
         return RunnableLambda(agent_node, name=role)
 
     def build_system(self, ticket: str, proj_dir_structure: str, code: str, image_description: str) -> CompiledStateGraph:
-        """Builds the multi-agent system."""
+        """Builds the multi-agent system and enables graph visualization."""
 
         researcher = self._create_agent_with_tools(
             "Researcher",
@@ -113,11 +111,10 @@ class AgentSystem:
 
         def research_critic_decision(state: AgentState):
             last_msg = state["messages"][-1].content
-
-            if "MISSING_CODE" in last_msg:  # If the response suggests missing details
+            if ("MISSING_CODE" in last_msg) and state["iteration_count"] <= MAX_ITERATIONS:
                 return "Researcher"
-            return "Solver"
-
+            else:
+                return "Solver"
 
         self.workflow.add_conditional_edges(
             "ResearchCritic",
@@ -129,10 +126,10 @@ class AgentSystem:
 
         def solver_decision(state: AgentState):
             last_msg = state["messages"][-1].content
-
-            if "MISSING_INFORMATION" in last_msg:  # If the response suggests missing details
+            if ("MISSING_CODE" in last_msg) and state["iteration_count"] <= MAX_ITERATIONS:
                 return "Researcher"
-            return "Critic"
+            else:
+                return "Critic"
 
         self.workflow.add_conditional_edges(
             "Solver",
@@ -140,17 +137,10 @@ class AgentSystem:
             {"Researcher": "Researcher", "Critic": "Critic"}
         )
 
-        self.workflow.add_edge("ResearchCritic", "Solver")
-
         def decide_next_step(state: AgentState):
             last_msg = state["messages"][-1].content
-
-            if "APPROVED" in last_msg:
-                return END  # End workflow if solution is approved
-
-            if state["iteration_count"] >= MAX_ITERATIONS:
-                return END  # Stop after max iterations
-
+            if "APPROVED" in last_msg or state["iteration_count"] >= MAX_ITERATIONS:
+                return END
             return "Solver"
 
         self.workflow.add_conditional_edges(
@@ -160,4 +150,8 @@ class AgentSystem:
         )
 
         self.workflow.set_entry_point("Researcher")
-        return self.workflow.compile(debug=True)
+
+        # Compile the graph
+        compiled_graph = self.workflow.compile(debug=True)
+
+        return compiled_graph
