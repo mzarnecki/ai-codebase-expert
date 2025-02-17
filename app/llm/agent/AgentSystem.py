@@ -21,7 +21,7 @@ class AgentSystem:
         self.prompt_template_provider = prompt_template_provider
         self.retriever_factory = retriever_factory
 
-        # Initialize tools for Analyzer
+        # Initialize tools for Researcher
         retriever_code, retriever_docs = self.retriever_factory.get_retrievers()
         self.retriever_code_tool = create_retriever_tool(
             retriever_code, name="search_project_code", description="Search project code files."
@@ -36,13 +36,13 @@ class AgentSystem:
         def agent_node(state: AgentState):
             prompt = ChatPromptTemplate.from_messages([
                 SystemMessage(content=template),
-                HumanMessage(content=state["ticket"] + "\n\nRelated Code:\n" + state["code"])
+                HumanMessage(content=state["ticket"])
             ])
             chain = prompt | self.llm
             response = chain.invoke({})
 
             new_state = {
-                "messages": (state["messages"] + [response])[-5:],  # Keep only last 5 messages
+                "messages": (state["messages"] + [response])[-15:],  # Keep only last 5 messages
                 "ticket": state["ticket"],
                 "code": state["code"],
                 "iteration_count": state["iteration_count"] + 1  # Increment iteration count
@@ -86,39 +86,61 @@ class AgentSystem:
     def build_system(self, ticket: str, proj_dir_structure: str, code: str, image_description: str) -> CompiledStateGraph:
         """Builds the multi-agent system."""
 
+        researcher = self._create_agent_with_tools(
+            "Researcher",
+            self.prompt_template_provider.get_researcher_prompt_message(ticket, code, proj_dir_structure)
+        )
+
+        research_critic = self._create_agent(
+            "ResearchCritic",
+            self.prompt_template_provider.get_research_critic_prompt_message(ticket, code, proj_dir_structure)
+        )
+
         solver = self._create_agent(
             "Solver",
-            self.prompt_template_provider.get_prompt_template_message(ticket, code, image_description)
+            self.prompt_template_provider.get_solver_prompt_template_message(ticket, code, image_description)
         )
 
-        analyzer = self._create_agent_with_tools(
-            "Analyzer",
-            self.prompt_template_provider.get_prompt_template_message(ticket, code, proj_dir_structure)
-        )
-
-        critic = self._create_agent(
+        solution_critic = self._create_agent(
             "Critic",
             self.prompt_template_provider.get_critic_prompt_message()
         )
 
+        self.workflow.add_node("Researcher", researcher)
+        self.workflow.add_node("ResearchCritic", research_critic)
         self.workflow.add_node("Solver", solver)
-        self.workflow.add_node("Analyzer", analyzer)
-        self.workflow.add_node("Critic", critic)
+        self.workflow.add_node("Critic", solution_critic)
+
+        def research_critic_decision(state: AgentState):
+            last_msg = state["messages"][-1].content
+
+            if "MISSING_CODE" in last_msg:  # If the response suggests missing details
+                return "Researcher"
+            return "Solver"
+
+
+        self.workflow.add_conditional_edges(
+            "ResearchCritic",
+            research_critic_decision,
+            {"Researcher": "Researcher", "Solver": "Solver"}
+        )
+
+        self.workflow.add_edge("Researcher", "ResearchCritic")
 
         def solver_decision(state: AgentState):
             last_msg = state["messages"][-1].content
 
             if "MISSING_INFORMATION" in last_msg:  # If the response suggests missing details
-                return "Analyzer"
+                return "Researcher"
             return "Critic"
 
         self.workflow.add_conditional_edges(
             "Solver",
             solver_decision,
-            {"Analyzer": "Analyzer", "Critic": "Critic"}
+            {"Researcher": "Researcher", "Critic": "Critic"}
         )
 
-        self.workflow.add_edge("Analyzer", "Solver")
+        self.workflow.add_edge("ResearchCritic", "Solver")
 
         def decide_next_step(state: AgentState):
             last_msg = state["messages"][-1].content
@@ -137,5 +159,5 @@ class AgentSystem:
             {"Solver": "Solver", END: END}
         )
 
-        self.workflow.set_entry_point("Solver")
+        self.workflow.set_entry_point("Researcher")
         return self.workflow.compile(debug=True)

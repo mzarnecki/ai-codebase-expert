@@ -31,17 +31,17 @@ class CodebaseChatbot:
         )
 
     @utils.enable_chat_history
-    def main(self):
+    def main(self, debug_output_container): # Accept debug_output_container
         form = Form()
 
         if form.submitted:
             ticket = Ticket(form)
-            self._process_ticket(ticket, form)
+            self._process_ticket(ticket, form, debug_output_container) # Pass it to _process_ticket
 
         if form.submit_jira:
             ticket = Ticket(form)
             self._get_jira_task(ticket, form.jira_task)
-            self._process_ticket(ticket, form)
+            self._process_ticket(ticket, form, debug_output_container) # Pass it to _process_ticket
 
 
     def _get_jira_task(self, ticket: Ticket, task_no: str):
@@ -57,7 +57,7 @@ class CodebaseChatbot:
             ticket.description = singleIssue.fields.description
             return
 
-    def _process_ticket(self, ticket: Ticket, form: Form):
+    def _process_ticket(self, ticket: Ticket, form: Form, debug_output_container): # Accept debug_output_container
         utils.display_msg("Ticket summary:\n\n" + ticket.__str__(), 'user')
 
         image_description = self._describe_attached_image(ticket)
@@ -67,7 +67,7 @@ class CodebaseChatbot:
         rag_output = self._get_concepts_with_RAG_for_the_task(ticket, image_description)
         utils.display_msg("RAG output:\n" + rag_output, "assistant")
 
-        result = self._provide_solution_with_selected_LLM_chain(form, ticket, rag_output, image_description)
+        result = self._provide_solution_with_selected_LLM_chain(form, ticket, rag_output, image_description, debug_output_container) # Pass it
         self._display_response_and_source_documents(result, ticket, rag_output)
 
     def _describe_attached_image(self, ticket: Ticket) -> str:
@@ -89,20 +89,22 @@ class CodebaseChatbot:
         rag_output = response_rag.replace('{', '{{').replace('}', '}}')
         return rag_output
 
-    def _provide_solution_with_selected_LLM_chain(self, form: Form, ticket: Ticket, rag_output: str, image_description: str) -> dict:
+    def _provide_solution_with_selected_LLM_chain(self, form: Form, ticket: Ticket, rag_output: str, image_description: str, debug_output_container): # Accept debug_output_container
         if form.use_agent == 'agent':
             result = self.llm_chain_provider.get_llm_agent_result(
                 self.llm,
                 ticket.__str__() + rag_output,
                 ticket.code,
-                image_description
+                image_description,
+                debug_output_container # Pass it to agent call
             )
         elif form.use_agent == 'multi-agent':
             result = self.llm_chain_provider.get_multi_agent_system_result(
                 self.llm,
                 ticket.__str__() + rag_output,
                 ticket.code,
-                image_description
+                image_description,
+                debug_output_container # Pass it to multi-agent call
             )
         else:
             result = self.llm_chain_provider.get_llm_conversational_chain_result(
@@ -134,4 +136,8 @@ class CodebaseChatbot:
 
 if __name__ == "__main__":
     obj = CodebaseChatbot()
-    obj.main()
+    # Add a Streamlit expander to contain debug output
+    with st.expander("Show Debug Output"):
+        debug_output_container = st.container()
+
+    obj.main(debug_output_container)
