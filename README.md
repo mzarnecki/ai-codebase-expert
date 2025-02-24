@@ -43,7 +43,13 @@ Tool workflow cycle consist of stages:
 ![architecture2.png](img/architecture2.png)
 3. Multiple requests to LLM by Multi-agent system with dedicated roles and access to retriever tools
 ![architecture3.png](img/architecture3.png)
-improved graph with additional Research Critic node 
+
+Agent state graph includes 4 agents:
+- Researcher
+- Researcher critic
+- Solver
+- Critic
+
 ![graph_visualization.png](img/graph_visualization.png)
 
 ## ✔️ Run unit tests
